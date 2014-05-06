@@ -2,7 +2,7 @@ function EndlessBattle()
 {
 	this.moduleActive = true;
 	this.name = "EndlessBattle";
-	this.version = 1.0;
+	this.version = 1.1;
 	this.baseUrl = FrozenBattle.baseUrl + '/Modules/EndlessBattle';
 	this.scripts = [ FrozenBattle.baseUrl + '/data.js', FrozenBattle.baseUrl + '/core.js' ];
 	
@@ -207,7 +207,7 @@ function EndlessBattle()
 	                continue;
 	            }
 	            
-	            FrozenUtils.log("Auto-selling " + item.name + " for " + item.sellValue);
+	            FrozenUtils.log("sold " + this.getRarityString(rarity) + " " + item.name + " for " + item.sellValue);
 	            game.inventory.sellItem(slot);
 	        }
 	        else

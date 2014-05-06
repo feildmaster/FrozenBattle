@@ -101,20 +101,20 @@ FrozenUtils.timeDisplay = function(seconds, highPrecision)
   
   milliSeconds %= (24 * 60 * 60 * 1000);
   hours = Math.floor(milliSeconds / (60 * 60 * 1000));
-  hours = (hours > 0) ? hours + 'h ' : '';
+  hours = (hours > 0) ? this.pad(hours, 2) + 'h ' : '';
   
   milliSeconds %= (60 * 60 * 1000);
   minutes = Math.floor(milliSeconds / (60 * 1000));
-  minutes = (minutes > 0) ? minutes + 'm ' : '';
+  minutes = (minutes > 0) ? this.pad(minutes, 2) + 'm ' : '';
   
   milliSeconds %= (60 * 1000);
   seconds = Math.floor(milliSeconds / 1000);
-  seconds = (seconds > 0) ? seconds + 's ' : '';
-  
+  seconds = (seconds > 0) ? this.pad(seconds, 2) + 's ' : '';
+    
   if(highPrecision == true)
   {
 	  milliSeconds %= 1000;
-	  milliSeconds = (milliSeconds > 0) ? milliSeconds + 'ms' : '';
+	  milliSeconds = (milliSeconds > 0) ? this.pad(milliSeconds, 3) + 'ms' : '';
 	  
 	  return (days + hours + minutes + seconds + milliSeconds).trim();
   }
