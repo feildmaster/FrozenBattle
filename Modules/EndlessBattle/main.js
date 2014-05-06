@@ -12,10 +12,7 @@ function EndlessBattle()
 	this.lastAttackTime = Date.now();
 	
 	this.updateTimePassed = 0;
-	
-	this.native_update;
-	this.native_createRandomItem;
-	
+		
 	this.updateLog = false;
 	
 	//---------------------------------------------------------------------------
@@ -25,6 +22,7 @@ function EndlessBattle()
 	{
 		FrozenUtils.log("Loading Endless battle module");
 		this.settings = new FrozenBattle.EndlessBattleSettings();
+		this.settings.load();
 		
 		if(game == undefined || game.itemCreator == undefined || game.itemCreator.createRandomItem == undefined)
 		{
@@ -34,18 +32,24 @@ function EndlessBattle()
 		}
 		
 		// Store the native methods
-		this.native_update = update;
-		this.native_createRandomItem = game.itemCreator.createRandomItem;
+		game.native_update = update;
+		game.native_createRandomItem = game.itemCreator.createRandomItem;
+		game.native_save = game.save;
+		game.native_load = game.load;
 		
 		// Override with our own
 		update = this.onUpdate;
 		game.itemCreator.createRandomItem = this.onCreateRandomItem;
+		game.save = this.onSave;
+		game.load = this.onLoad;
 		
 		// Store some other variables from the core game
 		this.minRarity = ItemRarity.COMMON;
 		this.maxRarity = ItemRarity.LEGENDARY;
 		
 		this.initializeUI();
+		
+		FrozenUtils.log("Endless battle module version " + this.getFullVersionString());
 	}
 	
 	this.onUpdate = function()
@@ -53,9 +57,36 @@ function EndlessBattle()
 		FrozenBattle.EndlessBattle.update();
 	}
 	
+	this.onSave = function()
+	{
+		FrozenBattle.EndlessBattle.save();
+	}
+	
+	this.onLoad = function()
+	{
+		FrozenBattle.EndlessBattle.load();
+	}
+	
+	this.save = function()
+	{
+		game.native_save();
+		
+		this.settings.save();
+		
+		localStorage.fb_version = this.version;
+	}
+	
+	this.load = function()
+	{
+		game.native_load();
+		
+		this.settings.load();
+	}
+	
 	this.update = function()
 	{
-		this.native_update();
+		game.native_update();
+		
 		if(!this.moduleActive || this.settings.disabled)
 		{
 			return;
@@ -199,7 +230,7 @@ function EndlessBattle()
 	
 	this.createRandomItem = function(level, rarity)
 	{		
-	    var item = this.native_createRandomItem(level, rarity);
+	    var item = game.native_createRandomItem(level, rarity);
 	    if(item == null)
 	    {
 	        return null;
@@ -325,11 +356,18 @@ function EndlessBattle()
 		}
 	}
 	
+	this.getFullVersionString = function()
+	{
+		return FrozenBattle.version+'.'+this.version;
+	}
+	
 	//---------------------------------------------------------------------------
 	// User interface
 	//---------------------------------------------------------------------------
 	this.initializeUI = function()
 	{
+		$('#version').after($('<div id="fbVersion" style="color: #808080; padding: 5px 0px 5px 10px; float: left"/>').html('FB ' + this.getFullVersionString()));
+		
 		$('#stats').after(
 				$('<div id="autoCombatButton" class="navBarText" style="padding: 5px 10px 5px 10px; float: left"/>').addClass('button')
 					.html('Auto combat ERR')
@@ -357,8 +395,10 @@ function EndlessBattle()
 	
 	this.onLog = function(message)
 	{
+		var time = '[' + FrozenUtils.timeDisplay(FrozenUtils.getDayTimeInSeconds(), false) + ']: ';
+		
 		var self = FrozenBattle.EndlessBattle;
-		self.settings.log.splice(0, 0, message);
+		self.settings.log.splice(0, 0, time + message);
 		while (self.settings.log.length > self.settings.logLimit)
 		{
 			self.settings.log.pop();

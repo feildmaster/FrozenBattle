@@ -16,8 +16,7 @@ if (IS_DEBUG)
 FrozenBattle = {
 	'baseUrl': baseUrl,
 	'branch' : 'M',
-	'version': 0.9,
-	'startTime': Date.now()
+	'version': 0.9
 };
 
 FrozenBattle.coreScripts = [
@@ -30,12 +29,57 @@ FrozenBattle.coreScripts = [
   ];
 
 FrozenUtils = {
-	'loadedScripts': []
+	'loadedScripts': [],
+	'startTime': Date.now()
 }
 
 // ---------------------------------------------------------------------------
 // Utility functions
 // ---------------------------------------------------------------------------
+FrozenUtils.load = function(property, defaultValue)
+{
+	loadedValue = localStorage[property];
+	if (localStorage[property] == undefined)
+	{
+		return defaultValue;
+	}
+	
+	return loadedValue;
+}
+
+FrozenUtils.loadBool = function(property, defaultValue)
+{
+	loadedValue = localStorage[property];
+	if (localStorage[property] == undefined)
+	{
+		return defaultValue;
+	}
+	
+	return loadedValue == "true";
+}
+
+FrozenUtils.loadInt = function(property, defaultValue)
+{
+	loadedValue = localStorage[property];
+	if (localStorage[property] == undefined)
+	{
+		return defaultValue;
+	}
+	
+	return parseInt(loadedValue);
+}
+
+FrozenUtils.loadFloat = function(property, defaultValue)
+{
+	loadedValue = localStorage[property];
+	if (localStorage[property] == undefined)
+	{
+		return defaultValue;
+	}
+	
+	return parseFloat(loadedValue);
+}
+
 FrozenUtils.pad = function(n, width, z)
 {
   z = z || '0';
@@ -53,7 +97,7 @@ FrozenUtils.timeDisplay = function(seconds, highPrecision)
   var days, hours, minutes, seconds;
   
   days = Math.floor(milliSeconds / (24 * 60 * 60 * 1000));
-  days = (days > 0) ? Beautify(days) + 'd ' : '';
+  days = (days > 0) ? days + 'd ' : '';
   
   milliSeconds %= (24 * 60 * 60 * 1000);
   hours = Math.floor(milliSeconds / (60 * 60 * 1000));
@@ -76,7 +120,13 @@ FrozenUtils.timeDisplay = function(seconds, highPrecision)
   }
   
   return (days + hours + minutes + seconds).trim();
-  
+}
+
+FrozenUtils.getDayTimeInSeconds = function()
+{
+	var now = new Date();
+    then = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    return now.getTime() - then.getTime();
 }
 
 FrozenUtils.logFormat = function(level, message, popup)
@@ -89,11 +139,6 @@ FrozenUtils.logFormat = function(level, message, popup)
 		console.log(fullMessage);
 	}
 	
-	if (FrozenUtils.logCallback)
-	{
-		FrozenUtils.logCallback(fullMessage);
-	}
-	
 	if(popup)
 	{
 		alert(fullMessage)
@@ -103,6 +148,11 @@ FrozenUtils.logFormat = function(level, message, popup)
 FrozenUtils.log = function(message)
 {
 	this.logFormat("INFO", message, false);
+	
+	if (FrozenUtils.logCallback)
+	{
+		FrozenUtils.logCallback(message);
+	}
 }
 
 FrozenUtils.stackTrace = function()
