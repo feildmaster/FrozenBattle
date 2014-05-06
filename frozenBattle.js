@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // Global Variables
 // ---------------------------------------------------------------------------
-var IS_DEBUG = true;
+var IS_DEBUG = false;
 
 var scriptElement = document.getElementById( 'frozenBattle' );
 var baseUrl = scriptElement !== null ?
