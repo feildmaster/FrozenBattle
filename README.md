@@ -8,7 +8,7 @@ How to use
 
 ## Bookmarklet install
 
-1. Paste the *contents* (not the url) of http://Craiel.github.io/FrozenBattle/fb_bookmarklet_loader.js into a bookmark.
+1. Paste the *contents* (not the url) of https://raw.githubusercontent.com/Craiel/FrozenBattle/master/fb_bookmarklet_loader.js into a bookmark.
 2. Load up Endless Battles.
 3. Load the recently created bookmark.
 
