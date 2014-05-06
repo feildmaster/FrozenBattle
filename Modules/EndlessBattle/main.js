@@ -65,12 +65,26 @@ function EndlessBattle()
 	    this.updateTimePassed += (currentTime - this.lastUpdateTime);
 	    if(this.updateTimePassed >= this.settings.updateInterval)
 	    {
+	    	this.finishMonster(currentTime);
 	        this.autoCombat(currentTime);
 	        this.autoSell(currentTime);
 	        this.updateTimePassed -= this.settings.updateInterval;
 	    }
 	    
 	    lastUpdateTime = currentTime;
+	}
+	
+	this.finishMonster = function(time)
+	{
+		// This will only go into effect if the monster shows as 0 health to fix floating health issues
+		if (!game.inBattle || !game.monster.alive || game.monster.health >= 1)
+		{
+			return;
+		}
+		
+		// Force the game to attack to resolve the dead monster
+		game.monster.alive = false;
+		game.attack();
 	}
 	
 	this.autoCombat = function(time)

@@ -25,4 +25,4 @@ function LoadFrozenBattle()
 
 // It's not the best way but Chrome doesn't work with addEventListener... :(
 // Delay load by 5 seconds to allow the site to load itself first.)
-window.setTimeout(LoadFrozenBattle, 5000);
+window.setTimeout(LoadFrozenBattle, 2000);
