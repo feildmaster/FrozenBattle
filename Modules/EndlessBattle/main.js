@@ -12,7 +12,7 @@ function EndlessBattle()
 	this.lastAttackTime = Date.now();
 	
 	this.updateTimePassed = 0;
-		
+	
 	this.updateLog = false;
 	
 	//---------------------------------------------------------------------------
@@ -48,6 +48,8 @@ function EndlessBattle()
 		this.maxRarity = ItemRarity.LEGENDARY;
 		
 		this.initializeUI();
+		
+		this.temp_fixPlayerHealth();
 		
 		FrozenUtils.log("Endless battle module version " + this.getFullVersionString());
 	}
@@ -290,6 +292,9 @@ function EndlessBattle()
 	
 	this.updateSalePrice = function(item)
 	{
+		baseSaleValue = Math.pow(item.level / 2, 3);
+		item.sellValue = 0;
+		
 	    var multiplier = 1;
 	    multiplier += this.updateSalePriceFor(item, item.damageBonus, 1, 0.15);
 	        
@@ -309,14 +314,14 @@ function EndlessBattle()
 	    multiplier += this.updateSalePriceFor(item, item.experienceGain, 0.01, 0.01);
 	    
 	    multiplier += this.updateSalePriceFor(item, item.enchantLevel, 0, 0.2);
-	        
+	    
 	    if(multiplier == NaN)
 	    {
 	        return;
 	    }
 	    
-	    var multiplied = parseInt(item.sellValue * multiplier);
-	    item.sellValue *= multiplied;
+	    var multipliedBaseValue = parseInt(baseSaleValue * multiplier);
+	    item.sellValue += multipliedBaseValue;
 	}
 
 	this.updateSalePriceFor = function(item, value, multiplierAdd, multiplierQuality)
@@ -359,6 +364,21 @@ function EndlessBattle()
 	this.getFullVersionString = function()
 	{
 		return FrozenBattle.version+'.'+this.version;
+	}
+	
+	// thanks to feildmaster @ http://feildmaster.com/feildmaster/scripts/EndlessImprovement/1.1/
+	this.temp_fixPlayerHealth = function()
+	{
+		FrozenUtils.log("Applying player health fix (thanks to feildmaster)");
+		
+		game.player.baseHealthLevelUpBonus = 0;
+		game.player.baseHp5LevelUpBonus = 0;
+		    
+		// Add stats to the player for leveling up
+		for (var x = 1; x < game.player.level; x++) {
+		    game.player.baseHealthLevelUpBonus += Math.floor(game.player.healthLevelUpBonusBase * (Math.pow(1.15, x)));
+		    game.player.baseHp5LevelUpBonus += Math.floor(game.player.hp5LevelUpBonusBase * (Math.pow(1.15, x)));
+		}
 	}
 	
 	//---------------------------------------------------------------------------
