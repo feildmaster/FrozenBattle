@@ -20,6 +20,8 @@ FrozenBattle.EndlessBattleSettings = function EndlessBattleSettings()
 	
 	// misc
 	this.improvedSalePriceEnabled = true;
+	this.detailedLogging = true;
+	this.numberFormatter = 1;
 	
 	// Stats and other potentially big data
 	this.log = [];
@@ -49,7 +51,9 @@ FrozenBattle.EndlessBattleSettings = function EndlessBattleSettings()
 		localStorage.fb_autoCombatLastAttackTime = this.autoCombatLastAttackTime;
 		localStorage.fb_autoCombatMaxLevelDifference = this.autoCombatMaxLevelDifference;
 		
-		localStorage.fb_improvedSalePriceEnable = this.improvedSalePriceEnable;
+		localStorage.fb_improvedSalePriceEnable = this.improvedSalePriceEnabled;
+		localStorage.fb_detailedLogging = this.detailedLogging;
+		localStorage.fb_numberFormatter = this.numberFormatter;
 	}
 	
 	this.load = function()
@@ -75,5 +79,7 @@ FrozenBattle.EndlessBattleSettings = function EndlessBattleSettings()
 		this.autoCombatMaxLevelDifference = FrozenUtils.loadInt("fb_autoCombatMaxLevelDifference", 5);
 		
 		this.improvedSalePriceEnable = FrozenUtils.loadBool("fb_improvedSalePriceEnable", true);
+		this.detailedLogging = FrozenUtils.loadBool("fb_detailedLogging", true);
+		this.numberFormatter = FrozenUtils.loadInt("fb_numberFormatter", 0);
 	}
 }

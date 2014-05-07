@@ -2,7 +2,7 @@ function EndlessBattle()
 {
 	this.moduleActive = true;
 	this.name = "EndlessBattle";
-	this.version = 1.1;
+	this.version = 1.2;
 	this.baseUrl = FrozenBattle.baseUrl + '/Modules/EndlessBattle';
 	this.scripts = [ FrozenBattle.baseUrl + '/data.js', FrozenBattle.baseUrl + '/core.js' ];
 	
@@ -12,6 +12,8 @@ function EndlessBattle()
 	this.lastAttackTime = Date.now();
 	
 	this.updateTimePassed = 0;
+	
+	
 	
 	this.updateLog = false;
 	
@@ -43,6 +45,16 @@ function EndlessBattle()
 		game.save = this.onSave;
 		game.load = this.onLoad;
 		
+		// Override item tooltips
+		this.native_equipItemHover = equipItemHover;
+		this.native_inventoryItemHover = inventoryItemHover;
+		equipItemHover = this.onEquipItemHover;
+		inventoryItemHover = this.onInventoryItemHover;
+		
+		// Override the formatter
+		this.native_formatMoney = Number.prototype.formatMoney;
+		Number.prototype.formatMoney = this.onFormatMoney;
+		
 		// Store some other variables from the core game
 		this.minRarity = ItemRarity.COMMON;
 		this.maxRarity = ItemRarity.LEGENDARY;
@@ -67,6 +79,54 @@ function EndlessBattle()
 	this.onLoad = function()
 	{
 		FrozenBattle.EndlessBattle.load();
+	}
+	
+	this.onFormatMoney = function(c, d, t)
+	{
+		var self = FrozenBattle.EndlessBattle;
+		var formatterKey = FrozenCore.FormatterKeys[self.settings.numberFormatter];
+		if(FrozenCore.Formatters[formatterKey] != undefined)
+		{
+			var formatter = FrozenCore.Formatters[formatterKey];
+			return formatter(parseInt(this)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+		} 
+		else
+		{
+			return self.nativeFormatMoney(this, c, d, t);
+		}
+	}
+	
+	this.onEquipItemHover = function(obj, index)
+	{
+		var self = FrozenBattle.EndlessBattle;
+		var item = game.inventory.slots[index - 1];
+		if(!item)
+		{
+			return;
+		}
+		
+		self.native_equipItemHover(obj, index);
+		$("#itemTooltipSellValue").html(item.sellValue.formatMoney());
+	}
+	
+	this.onInventoryItemHover = function(obj, index)
+	{
+		var self = FrozenBattle.EndlessBattle;
+		var item = game.inventory.slots[index - 1];
+		if(!item)
+		{
+			return;
+		}
+		
+		self.native_inventoryItemHover(obj, index);
+		
+		$("#itemTooltipSellValue").html(item.sellValue.formatMoney(2));
+		var equippedSlot = self.getItemSlotNumber(item.type);
+		var item2 = game.equipment.slots[equippedSlot];
+		if(item2)
+		{
+			$("#itemCompareTooltipSellValue").html(item2.sellValue.formatMoney(2));
+		}
 	}
 	
 	this.save = function()
@@ -209,7 +269,11 @@ function EndlessBattle()
 	                continue;
 	            }
 	            
-	            FrozenUtils.log("sold " + this.getRarityString(rarity) + " " + item.name + " for " + item.sellValue);
+	            if(this.settings.detailedLogging)
+	            {
+	            	FrozenUtils.log("sold " + this.getRarityString(rarity) + " " + item.name + " for " + item.sellValue);
+	            }
+	            
 	            game.inventory.sellItem(slot);
 	        }
 	        else
@@ -248,7 +312,10 @@ function EndlessBattle()
 	    	this.updateSalePrice(item);
 	    }
 	    
-	    FrozenUtils.log("Found " + item.name);
+	    if(this.settings.detailedLogging)
+        {
+	    	FrozenUtils.log("Found " + item.name);
+        }
 	    
 	    return item;
 	}
@@ -361,6 +428,22 @@ function EndlessBattle()
 		}
 	}
 	
+	this.getItemSlotNumber = function(type)
+	{
+		switch(type)
+		{
+			case ItemType.HELM: return 0;
+			case ItemType.SHOULDERS: return 1;
+			case ItemType.CHEST: return 2;
+			case ItemType.LEGS: return 3;
+			case ItemType.WEAPON: return 4;
+			case ItemType.GLOVES: return 5;
+			case ItemType.BOOTS: return 6;
+			case ItemType.TRINKET: return 7;
+			case ItemType.OFF_HAND: return 9;
+		}
+	}
+	
 	this.getFullVersionString = function()
 	{
 		return FrozenBattle.version+'.'+this.version;
@@ -379,6 +462,79 @@ function EndlessBattle()
 		    game.player.baseHealthLevelUpBonus += Math.floor(game.player.healthLevelUpBonusBase * (Math.pow(1.15, x)));
 		    game.player.baseHp5LevelUpBonus += Math.floor(game.player.hp5LevelUpBonusBase * (Math.pow(1.15, x)));
 		}
+		
+		game.player.health = game.player.getMaxHealth();
+	}
+	
+	this.sortInventory = function()
+	{
+		var order = {}
+		for (var slot = 0; slot < game.inventory.slots.length; slot++) 
+	    {
+	        if (game.inventory.slots[slot] != null) 
+	        {
+	            var item = game.inventory.slots[slot];
+	            var orderValue = (this.getItemSlotNumber(item.type) * 100) + this.getRarityNumber(item.rarity);
+	            if(!order[orderValue])
+	            {
+	            	order[orderValue] = [];
+	            }
+	            
+	            order[orderValue].push(item);
+	        }
+	    }
+		
+		var keys = Object.keys(order);
+		keys.sort();
+		var currentSlot = 0;
+		for (var i = 0; i < keys.length; i++)
+		{
+			for(var n = 0; n < order[keys[i]].length; n++)
+			{
+				game.inventory.slots[currentSlot++] = order[keys[i]][n];
+			}
+		}
+		
+		for(var slot = currentSlot; slot < game.inventory.slots.length; slot++)
+		{
+			game.inventory.slots[slot] = null;
+		}
+		
+		this.refreshInventoryDisplay();
+	}
+	
+	this.refreshInventoryDisplay = function()
+	{
+		for (var slot = 0; slot < game.inventory.slots.length; slot++) 
+	    {
+			if (game.inventory.slots[slot] != null) 
+	        {
+				var item = game.inventory.slots[slot];
+				$("#inventoryItem" + (slot + 1)).css('background', 'url("includes/images/itemSheet2.png") ' + item.iconSourceX + 'px ' + item.iconSourceY + 'px');
+				
+	        }
+			else
+	        {
+				$("#inventoryItem" + (slot + 1)).css('background', 'url("includes/images/NULL.png")');
+	        }
+			
+			// Fix the positioning, sometimes this can go wonky...
+			var row = parseInt(slot / 5);
+			var column = slot - (row * 5);
+			$("#inventoryItem" + (slot + 1)).css('left', 4 + column * 41);
+			$("#inventoryItem" + (slot + 1)).css('top', 29 + row * 41);
+	    }
+	}
+	
+	this.nativeFormatMoney = function(n, c, d, t)
+	{
+		var c = isNaN(c = Math.abs(c)) ? 2 : c, 
+			d = d == undefined ? "." : d, 
+			t = t == undefined ? "," : t, 
+			s = n < 0 ? "-" : "", 
+			i = parseInt(n = Math.abs(+n || 0).toFixed(c)) + "", 
+			j = (j = i.length) > 3 ? j % 3 : 0;
+		return s + (j ? i.substr(0, j) + t : "") + i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + t) + (c ? d + Math.abs(n - i).toFixed(c).slice(2) : "");
 	}
 	
 	//---------------------------------------------------------------------------
@@ -406,7 +562,31 @@ function EndlessBattle()
 				    .click(this.onToggleAutoSellThreshold)
 				);
 		
+		$('#inventoryWindowSellAllButton').after(
+				$('<div id="inventoryWindowSortButton" class="button"/>').addClass('button')
+				.html('Sort')
+			    .click(this.onSortInventory)
+				);
+		
 		$('#combatArea').append('<textarea id="logArea" style="background-color: #000; color: #fff; position: absolute; bottom:30px; left:5px; width:500px; height:200px;"/>');
+		
+		// Extended options
+		$('#expBarOption').after(
+				$('<div id="fbOptionNumberFormatting" class="optionsWindowOption"/>')
+				.click(this.onToggleOptionNumberFormatting)
+				);
+		$('#fbOptionNumberFormatting').after(
+				$('<div id="fbOptionDetailedLogging" class="optionsWindowOption"/>')
+				.click(this.onToggleOptionDetailedLogging)
+				);
+		$('#fbOptionDetailedLogging').after(
+				$('<div id="fbOptionEnchanting" class="optionsWindowOption"/>')
+				.click(this.onToggleOptionEnchanting)
+				);
+		$('#fbOptionEnchanting').after(
+				$('<div id="fbOptionImprovedSalePrice" class="optionsWindowOption"/>')
+				.click(this.onToggleOptionImprovedSalePrice)
+				);
 		
 		FrozenUtils.logCallback = this.onLog;
 		
@@ -455,10 +635,69 @@ function EndlessBattle()
 		self.updateUI();
 	}
 	
+	this.onToggleOptionDetailedLogging = function()
+	{
+		var self = FrozenBattle.EndlessBattle;
+		self.settings.detailedLogging = !self.settings.detailedLogging;
+		
+		self.updateUI();
+	}
+	
+	this.onToggleOptionEnchanting = function()
+	{
+		var self = FrozenBattle.EndlessBattle;
+		self.settings.enchantingEnabled = !self.settings.enchantingEnabled;
+		
+		self.updateUI();
+	}
+	
+	this.onToggleOptionImprovedSalePrice = function()
+	{
+		var self = FrozenBattle.EndlessBattle;
+		self.settings.improvedSalePriceEnabled = !self.settings.improvedSalePriceEnabled;
+		
+		self.updateUI();
+	}
+	
+	this.onToggleOptionNumberFormatting = function()
+	{
+		var self = FrozenBattle.EndlessBattle;
+		if(self.settings.numberFormatter >= FrozenCore.FormatterKeys.length - 1)
+		{
+			self.settings.numberFormatter = 0;
+		}
+		else
+		{
+			self.settings.numberFormatter++;
+		}
+		
+		self.updateMercenarySalePrices();
+		self.updateUI();
+	}
+	
+	this.onSortInventory = function()
+	{
+		FrozenBattle.EndlessBattle.sortInventory();
+	}
+	
+	this.updateMercenarySalePrices = function()
+	{
+		$("#footmanCost").text(game.mercenaryManager.footmanPrice.formatMoney(0));
+		$("#clericCost").text(game.mercenaryManager.clericPrice.formatMoney(0));
+		$("#commanderCost").text(game.mercenaryManager.commanderPrice.formatMoney(0));
+		$("#mageCost").text(game.mercenaryManager.magePrice.formatMoney(0));
+		$("#thiefCost").text(game.mercenaryManager.thiefPrice.formatMoney(0));
+		$("#warlockCost").text(game.mercenaryManager.warlockPrice.formatMoney(0));
+	}
+	
 	this.updateUI = function()
 	{
 		$("#autoCombatButton").text('Auto combat ' + this.getBoolDisplayText(this.settings.autoCombatActive));
 		$("#autoSellButton").text('Auto sell ' + this.getBoolDisplayText(this.settings.autoSellActive));
+		$("#fbOptionDetailedLogging").text("Detailed logging " + this.getBoolDisplayText(this.settings.detailedLogging));
+		$("#fbOptionEnchanting").text("Enchanting " + this.getBoolDisplayText(this.settings.enchantingEnabled));
+		$("#fbOptionImprovedSalePrice").text("Improved sale price " + this.getBoolDisplayText(this.settings.improvedSalePriceEnabled));
+		$("#fbOptionNumberFormatting").text("Format numbers " + FrozenCore.FormatterKeys[this.settings.numberFormatter]);
 		
 		var autoSellThresholdText = "N/A";
 		if(this.settings.autoSellActive)
@@ -496,7 +735,7 @@ FrozenBattle.EndlessBattleModule = function EndlessBattleModule()
 	{
 		FrozenBattle.EndlessBattle = new EndlessBattle();
 		
-		var includes = [ FrozenBattle.EndlessBattle.baseUrl + "/data.js" ];
+		var includes = [ FrozenBattle.EndlessBattle.baseUrl + "/data.js", FrozenBattle.EndlessBattle.baseUrl + '/layout.css' ];
 		FrozenUtils.loadScripts(includes, 0, function() { FrozenBattle.EndlessBattle.init() } );
 	}
 }
