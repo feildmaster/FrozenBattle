@@ -563,7 +563,7 @@ function EndlessBattle()
 				);
 		
 		$('#inventoryWindowSellAllButton').after(
-				$('<div id="inventoryWindowSortButton" class="button"/>').addClass('button')
+				$('<div id="inventoryWindowSortButton" class="button" style="font-family: \'Gentium Book Basic\'; position: absolute; left: 175px; top: 241px; line-height: 16px; color: #fff; font-size: 16px; text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 1px 1px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;"/>').addClass('button')
 				.html('Sort')
 			    .click(this.onSortInventory)
 				);
