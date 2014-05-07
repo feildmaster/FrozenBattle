@@ -26,11 +26,14 @@ Extension Contents
  - Adds Auto-sell option.
  - Adds chance for items to be enchanted.
  - Adds a log window showing recently looted items and auto sell values.
+ - Adds option to sort the inventory by type and rarity
+ - Adds several different types of number formatting
  - Improves the Item sell price to reflect the properties better.
  
 What's new
 -----------
 
+ - 2014-05-07: Health fix, Number formatting and inventory sorting
  - 2014-05-06: Initial version
 
 Upcoming features
