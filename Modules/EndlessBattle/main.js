@@ -2,7 +2,7 @@ function EndlessBattle()
 {
 	this.moduleActive = true;
 	this.name = "EndlessBattle";
-	this.version = 1.2;
+	this.version = 1.3;
 	this.baseUrl = FrozenBattle.baseUrl + '/Modules/EndlessBattle';
 	this.scripts = [ FrozenBattle.baseUrl + '/data.js', FrozenBattle.baseUrl + '/core.js' ];
 	
@@ -12,11 +12,7 @@ function EndlessBattle()
 	this.lastAttackTime = Date.now();
 	
 	this.updateTimePassed = 0;
-	
-	
-	
-	this.updateLog = false;
-	
+		
 	//---------------------------------------------------------------------------
 	// main code
 	//---------------------------------------------------------------------------
@@ -38,12 +34,16 @@ function EndlessBattle()
 		game.native_createRandomItem = game.itemCreator.createRandomItem;
 		game.native_save = game.save;
 		game.native_load = game.load;
+		game.player.native_getCritChance = game.player.getCritChance;
+		game.mercenaryManager.native_purchaseMercenary = game.mercenaryManager.purchaseMercenary;
 		
 		// Override with our own
 		update = this.onUpdate;
 		game.itemCreator.createRandomItem = this.onCreateRandomItem;
 		game.save = this.onSave;
 		game.load = this.onLoad;
+		game.player.getCritChance = this.onGetCritChance;
+		game.mercenaryManager.purchaseMercenary = this.onPurchaseMercenary;
 		
 		// Override item tooltips
 		this.native_equipItemHover = equipItemHover;
@@ -64,6 +64,20 @@ function EndlessBattle()
 		this.temp_fixPlayerHealth();
 		
 		FrozenUtils.log("Endless battle module version " + this.getFullVersionString());
+	}
+	
+	this.onPurchaseMercenary = function(type) {
+		game.mercenaryManager.native_purchaseMercenary(type);
+		FrozenBattle.EndlessBattle.updateUI();
+	}
+	
+	this.onGetCritChance = function() {
+		var chance = game.player.native_getCritChance();
+		if(chance > 90){
+			return 90;
+		}
+		
+		return chance;
 	}
 	
 	this.onUpdate = function()
@@ -99,26 +113,27 @@ function EndlessBattle()
 	this.onEquipItemHover = function(obj, index)
 	{
 		var self = FrozenBattle.EndlessBattle;
+		self.native_equipItemHover(obj, index);		
+		
 		var item = game.inventory.slots[index - 1];
 		if(!item)
 		{
 			return;
 		}
-		
-		self.native_equipItemHover(obj, index);
+				
 		$("#itemTooltipSellValue").html(item.sellValue.formatMoney());
 	}
 	
 	this.onInventoryItemHover = function(obj, index)
 	{
 		var self = FrozenBattle.EndlessBattle;
+		self.native_inventoryItemHover(obj, index);		
+		
 		var item = game.inventory.slots[index - 1];
 		if(!item)
 		{
 			return;
 		}
-		
-		self.native_inventoryItemHover(obj, index);
 		
 		$("#itemTooltipSellValue").html(item.sellValue.formatMoney(2));
 		var equippedSlot = self.getItemSlotNumber(item.type);
@@ -223,7 +238,13 @@ function EndlessBattle()
 	        game.enterBattle();
 	    }
 	    
-	    var attacks = 1 + (game.player.getAgility() / 100);
+	    var doubleHitChance = this.getDoubleHitChance();
+	    var attacks = 1;
+	    if(Math.random() < doubleHitChance)
+	    {
+	    	attacks++;
+	    }
+	    
 	    while(attacks >= 1)
 	    {
 	        game.attack();
@@ -241,12 +262,24 @@ function EndlessBattle()
 	    time -= game.mercenaryManager.warlocksOwned * 30;
 	    var multiplier = 1.0 + game.mercenaryManager.commandersOwned * 0.1;
 	    time /= multiplier;
-	    if(time < 1000)
+	    if(time < 10)
 	    {
-	        return 1000;
+	        return 10;
 	    }
 	    
 	    return time / multiplier;
+	}
+	
+	this.getDoubleHitChance = function()
+	{
+		var baseChance = 0.01;
+		var chance = game.player.native_getCritChance();
+		if(chance > 90)
+		{
+			baseChance += (chance - 90) / 1000;
+		}
+		
+		return baseChance;
 	}
 	
 	this.autoSell = function(time)
@@ -271,7 +304,7 @@ function EndlessBattle()
 	            
 	            if(this.settings.detailedLogging)
 	            {
-	            	FrozenUtils.log("sold " + this.getRarityString(rarity) + " " + item.name + " for " + item.sellValue);
+	            	FrozenUtils.log("sold " + this.getRarityString(rarity) + " " + item.name + " for " + item.sellValue.formatMoney(2));
 	            }
 	            
 	            game.inventory.sellItem(slot);
@@ -568,8 +601,6 @@ function EndlessBattle()
 			    .click(this.onSortInventory)
 				);
 		
-		$('#combatArea').append('<textarea id="logArea" style="background-color: #000; color: #fff; position: absolute; bottom:30px; left:5px; width:500px; height:200px;"/>');
-		
 		// Extended options
 		$('#expBarOption').after(
 				$('<div id="fbOptionNumberFormatting" class="optionsWindowOption"/>')
@@ -592,22 +623,7 @@ function EndlessBattle()
 		
 		this.updateUI();
 	}
-	
-	this.onLog = function(message)
-	{
-		var time = '[' + FrozenUtils.timeDisplay(FrozenUtils.getDayTimeInSeconds(), false) + ']: ';
 		
-		var self = FrozenBattle.EndlessBattle;
-		self.settings.log.splice(0, 0, time + message);
-		while (self.settings.log.length > self.settings.logLimit)
-		{
-			self.settings.log.pop();
-		}
-		
-		self.updateLog = true;
-		self.updateUI();
-	}
-	
 	this.onToggleAutoCombat = function()
 	{
 		var self = FrozenBattle.EndlessBattle;
@@ -692,7 +708,13 @@ function EndlessBattle()
 	
 	this.updateUI = function()
 	{
-		$("#autoCombatButton").text('Auto combat ' + this.getBoolDisplayText(this.settings.autoCombatActive));
+		if(this.settings.autoCombatActive){
+			var attackTime = FrozenUtils.timeDisplay(this.getAutoAttackTime(), true);
+			$("#autoCombatButton").text('Auto combat ' + this.getBoolDisplayText(this.settings.autoCombatActive) + ' (every '+attackTime+')');
+		} else {
+			$("#autoCombatButton").text('Auto combat ' + this.getBoolDisplayText(this.settings.autoCombatActive));
+		}
+		
 		$("#autoSellButton").text('Auto sell ' + this.getBoolDisplayText(this.settings.autoSellActive));
 		$("#fbOptionDetailedLogging").text("Detailed logging " + this.getBoolDisplayText(this.settings.detailedLogging));
 		$("#fbOptionEnchanting").text("Enchanting " + this.getBoolDisplayText(this.settings.enchantingEnabled));
@@ -712,12 +734,6 @@ function EndlessBattle()
 			}
 		}
 		$("#autoSellThresholdButton").text('Auto sell ' + autoSellThresholdText);
-		
-		if (this.updateLog)
-		{
-			$('#logArea').text(this.settings.log.join("\n"));
-			this.updateLog = false;
-		}
 	}
 	
 	this.getBoolDisplayText = function(value)

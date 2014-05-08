@@ -95,6 +95,12 @@ FrozenCore.Formatters = {
 //---------------------------------------------------------------------------
 FrozenCore.main = function()
 {
+	// Setup default notification style
+	$.noty.defaults.layout = 'bottom';
+	$.noty.defaults.timeout = 5000;
+	
+	FrozenUtils.notyEnabled = true;
+		
 	FrozenUtils.log("Initializing core...");
 	
 	var moduleScripts = [];
