@@ -1,7 +1,7 @@
 function EndlessBattle() {
     this.moduleActive = true;
     this.name = "EndlessBattle";
-    this.version = 1.4;
+    this.version = 1.5;
     this.baseUrl = FrozenBattle.baseUrl + '/Modules/EndlessBattle';
     this.scripts = [ FrozenBattle.baseUrl + '/data.js', FrozenBattle.baseUrl + '/core.js' ];
 
@@ -20,9 +20,6 @@ function EndlessBattle() {
     // main code
     // ---------------------------------------------------------------------------
     this.init = function() {
-        this.settings = new FrozenBattle.EndlessBattleSettings();
-        this.settings.load();
-
         if (game == undefined || game.itemCreator == undefined
                 || game.itemCreator.createRandomItem == undefined) {
             FrozenUtils.log("Endless battle was not detected, disabling module!");
@@ -30,26 +27,11 @@ function EndlessBattle() {
             return;
         }
 
-        // Store the native methods
-        game.native_update = update;
-        game.native_createRandomItem = game.itemCreator.createRandomItem;
-        game.native_save = game.save;
-        game.native_load = game.load;
-        game.player.native_getCritChance = game.player.getCritChance;
-        game.player.native_gainExperience = game.player.gainExperience;
-        game.mercenaryManager.native_purchaseMercenary = game.mercenaryManager.purchaseMercenary;
-        game.monsterCreator.native_createRandomMonster = game.monsterCreator.createRandomMonster;
-        
+        // Load the settings
+        this.settings = new FrozenBattle.EndlessBattleSettings();
+        this.settings.load();
 
-        // Override with our own
-        update = this.onUpdate;
-        game.itemCreator.createRandomItem = this.onCreateRandomItem;
-        game.save = this.onSave;
-        game.load = this.onLoad;
-        game.player.getCritChance = this.onGetCritChance;
-        game.player.gainExperience = this.onGainExperience;
-        game.mercenaryManager.purchaseMercenary = this.onPurchaseMercenary;
-        game.monsterCreator.createRandomMonster = this.onCreateMonster;
+        this.registerHooks();
 
         // Override item tooltips
         this.native_equipItemHover = equipItemHover;
@@ -71,24 +53,102 @@ function EndlessBattle() {
 
         FrozenUtils.log("Endless battle module version " + this.getFullVersionString() + " loaded");
     }
-    
-    this.onGainExperience = function(amount, includeBonuses) {
-        game.player.native_gainExperience(amount, includeBonuses);
-        
-        FrozenBattle.EndlessBattle.experienceSinceUpdate += amount;
+
+    this.registerHooks = function() {
+        // Store the native methods
+        game.native_update = update;
+        game.native_createRandomItem = game.itemCreator.createRandomItem;
+        game.native_save = game.save;
+        game.native_load = game.load;
+        game.native_reset = game.reset;
+        game.player.native_getCritChance = game.player.getCritChance;
+        game.player.native_gainExperience = game.player.gainExperience;
+        game.player.native_gainGold = game.player.gainGold;
+        game.mercenaryManager.native_purchaseMercenary = game.mercenaryManager.purchaseMercenary;
+        game.monsterCreator.native_createRandomMonster = game.monsterCreator.createRandomMonster;
+
+        // Override with our own
+        update = this.onUpdate;
+        game.itemCreator.createRandomItem = this.onCreateRandomItem;
+        game.save = this.onSave;
+        game.load = this.onLoad;
+        game.reset = this.onReset;
+        game.player.getCritChance = this.onGetCritChance;
+        game.player.gainExperience = this.onGainExperience;
+        game.player.gainGold = this.onGainGold;
+        game.mercenaryManager.purchaseMercenary = this.onPurchaseMercenary;
+        game.monsterCreator.createRandomMonster = this.onCreateMonster;
     }
-        
+
+    this.releaseHooks = function() {
+        update = game.native_update;
+        game.itemCreator.createRandomItem = game.native_createRandomItem;
+        game.save = game.native_save;
+        game.load = game.native_load;
+        game.reset = game.native_reset;
+        game.player.getCritChance = game.player.native_getCritChance;
+        game.player.gainExperience = game.player.native_gainExperience;
+        game.player.gainGold = game.player.native_gainGold;
+        game.mercenaryManager.purchaseMercenary = game.mercenaryManager.native_purchaseMercenary;
+        game.monsterCreator.createRandomMonster = game.monsterCreator.native_createRandomMonster;
+    }
+
+    this.onReset = function() {
+        var self = FrozenBattle.EndlessBattle;
+
+        self.releaseHooks();
+        self.settings.levelsReset += game.player.level - 1;
+        FrozenUtils.log("Resetting");
+
+        game.native_reset();
+
+        // Apply base stat bonus for level resets
+        if (self.settings.applyLevelResetBonus) {
+            game.player.baseDamageBonus += self.settings.levelsReset;
+        }
+
+        self.settings.autoCombatMaxLevelDifference = 0;
+        self.settings.autoCombatLevel = 1;
+        self.settings.save();
+
+        self.registerHooks();
+    }
+
+    this.onGainExperience = function(amount, includeBonuses) {
+        var self = FrozenBattle.EndlessBattle;
+
+        if (self.settings.applyLevelResetBonus) {
+            var multiplier = 1 + 0.01 * self.settings.levelsReset;
+            amount *= multiplier;
+        }
+
+        game.player.native_gainExperience(amount, includeBonuses);
+
+        self.experienceSinceUpdate += amount;
+    }
+
+    this.onGainGold = function(amount, includeBonuses) {
+        var self = FrozenBattle.EndlessBattle;
+
+        if (self.settings.applyLevelResetBonus) {
+            var multiplier = 1 + 0.01 * self.settings.levelsReset;
+            amount *= multiplier;
+        }
+
+        game.player.native_gainGold(amount, includeBonuses);
+    }
+
     this.onCreateMonster = function(level, rarity) {
         if (game.monster) {
             game.monster.takeDamage = game.monster.native_takeDamage;
         }
-        
+
         var newMonster = game.monsterCreator.native_createRandomMonster(level, rarity);
-        
+
         // Hook the monsters take damage
         newMonster.native_takeDamage = newMonster.takeDamage;
         newMonster.takeDamage = FrozenBattle.EndlessBattle.onMonsterTakeDamage;
-        
+
         return newMonster;
     }
 
@@ -352,13 +412,14 @@ function EndlessBattle() {
 
         return item;
     }
-    
+
     this.addStat = function(key, value) {
-        if(value == undefined) value = 1;
-        if(!this.settings.stats[key]) {
+        if (value == undefined)
+            value = 1;
+        if (!this.settings.stats[key]) {
             this.settings.stats[key] = 0;
         }
-        
+
         this.settings.stats[key] += value;
         this.updateInterfaceStats();
     }
@@ -582,10 +643,13 @@ function EndlessBattle() {
     this.updateStats = function() {
         this.settings.stats['Damage/s'] = this.damageDealtSinceUpdate;
         this.damageDealtSinceUpdate = 0;
-        
+
         this.settings.stats['XP/s'] = this.experienceSinceUpdate;
         this.experienceSinceUpdate = 0;
-        
+
+        // Set some special stats directly
+        this.settings.stats["Levels reset"] = this.settings.levelsReset;
+
         this.updateInterfaceStats();
     }
 
@@ -630,6 +694,8 @@ function EndlessBattle() {
                             FrozenBattle.EndlessBattle
                                     .onToggleBoolSetting("formatHealthBarNumbers")
                         }));
+        $('#fbOptionFormatHealthBars').after(
+                $('<div id="fbOptionApplyLevelResetBonus" class="optionsWindowOption"/>').click(this.onToggleApplyLevelResetBonus));
 
         // Auto combat screen
         var ondemandOptions = $('<div id="fbOnDemandOptions" class="navBarWindow" style="width:300px; height:200px; position: absolute; left:10px;top: 75px;margin: 0;"/>');
@@ -757,6 +823,19 @@ function EndlessBattle() {
         self.settings[setting] = !self.settings[setting];
         self.updateUI();
     }
+    
+    this.onToggleApplyLevelResetBonus = function() {
+        var self = FrozenBattle.EndlessBattle;
+        self.settings.applyLevelResetBonus = !self.settings.applyLevelResetBonus;
+        
+        if (self.settings.applyLevelResetBonus) {
+            game.player.baseDamageBonus += self.settings.levelsReset;
+        } else {
+            game.player.baseDamageBonus -= self.settings.levelsReset;
+        }
+        
+        self.updateUI();
+    }
 
     this.onToggleAutoSellThreshold = function() {
         var self = FrozenBattle.EndlessBattle;
@@ -839,6 +918,9 @@ function EndlessBattle() {
         $("#fbOptionFormatHealthBars").text(
                 "Format health bars: "
                         + this.getBoolDisplayText(this.settings.formatHealthBarNumbers));
+        $("#fbOptionApplyLevelResetBonus").text(
+                "Apply level reset bonus: "
+                        + this.getBoolDisplayText(this.settings.applyLevelResetBonus))
 
         var autoSellThresholdText = "";
         if (this.settings.autoSellActive) {
@@ -855,9 +937,9 @@ function EndlessBattle() {
         }
         else {
             $("#autoSellThresholdButton").hide();
-        }        
+        }
     }
-    
+
     this.updateInterfaceStats = function() {
         $("#fbExtraStats").empty();
         for (key in this.settings.stats) {

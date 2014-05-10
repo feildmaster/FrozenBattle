@@ -18,13 +18,15 @@ FrozenBattle.EndlessBattleSettings = function EndlessBattleSettings()
 	this.autoCombatKeepLevelDifference = true;
 	this.autoCombatLastAttackTime = 0;
 	this.autoCombatMaxLevelDifference = 5;
-	this.autoCombatLevel = 0;
+	this.autoCombatLevel = 1;
 	
 	// misc
 	this.improvedSalePriceEnabled = true;
 	this.formatHealthBarNumbers = true;
 	this.detailedLogging = true;
 	this.numberFormatter = 1;
+	this.levelsReset = 0;
+	this.applyLevelResetBonus = true;
 	
 	// Stats and other potentially big data
 	this.log = [];
@@ -62,6 +64,8 @@ FrozenBattle.EndlessBattleSettings = function EndlessBattleSettings()
 		localStorage.fb_detailedLogging = this.detailedLogging;
 		localStorage.fb_numberFormatter = this.numberFormatter;
 		localStorage.fb_formatHealthBarNumbers = this.formatHealthBarNumbers;
+		localStorage.fb_levelsReset = this.levelsReset;
+		localStorage.fb_applyLevelResetBonus = this.applyLevelResetBonus;
 		
 		var statKeys = Object.keys(this.stats);
 		localStorage.fb_statCount = statKeys.length;
@@ -93,12 +97,14 @@ FrozenBattle.EndlessBattleSettings = function EndlessBattleSettings()
 		this.autoCombatKeepLevelDifference = FrozenUtils.loadBool("fb_autoCombatKeepLevelDifference", true);
 		this.autoCombatLastAttackTime = FrozenUtils.loadInt("fb_autoCombatLastAttackTime", 0);
 		this.autoCombatMaxLevelDifference = FrozenUtils.loadInt("fb_autoCombatMaxLevelDifference", 5);
-		this.autoCombatLevel = FrozenUtils.loadInt("fb_autoCombatLevel", 0);
+		this.autoCombatLevel = FrozenUtils.loadInt("fb_autoCombatLevel", 1);
 		
 		this.improvedSalePriceEnable = FrozenUtils.loadBool("fb_improvedSalePriceEnable", true);
 		this.detailedLogging = FrozenUtils.loadBool("fb_detailedLogging", true);
 		this.numberFormatter = FrozenUtils.loadInt("fb_numberFormatter", 0);
 		this.formatHealthBarNumbers = FrozenUtils.loadBool("fb_formatHealthBarNumbers", true);
+		this.levelsReset = FrozenUtils.loadInt("fb_levelsReset", 0);
+		this.applyLevelResetBonus = FrozenUtils.loadBool("fb_applyLevelResetBonus", true);
 		
 		var statCount = FrozenUtils.loadInt("fb_statCount", 0);
 		for(var i = 0; i < statCount; i++) {
