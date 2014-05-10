@@ -42,7 +42,7 @@ What's new
 
 Auto attack details
 -------------------
-Auto attack speed starts at 10s and gets faster for every mercenaries owned:
+Auto attack speed starts at 10s and gets faster for every mercenary owned:
  - 10ms for footmen
  - 20ms for clerics
  - 75ms for mages
