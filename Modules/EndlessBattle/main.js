@@ -327,18 +327,20 @@ function EndlessBattle() {
 
     this.getAutoAttackTime = function() {
         var time = 10000;
-        time -= game.mercenaryManager.footmenOwned * 10;
-        time -= game.mercenaryManager.clericsOwned * 15;
-        time -= game.mercenaryManager.magesOwned * 20;
-        time -= game.mercenaryManager.thiefsOwned * 25;
-        time -= game.mercenaryManager.warlocksOwned * 30;
-        var multiplier = 1.0 + game.mercenaryManager.commandersOwned * 0.1;
-        time /= multiplier;
+        var deduction = 0;
+        deduction += game.mercenaryManager.footmenOwned * 10;
+        deduction += game.mercenaryManager.clericsOwned * 15;
+        deduction += game.mercenaryManager.magesOwned * 20;
+        deduction += game.mercenaryManager.thiefsOwned * 25;
+        deduction += game.mercenaryManager.warlocksOwned * 30;
+        var multiplier = 1.0 + game.mercenaryManager.commandersOwned * 0.01;
+        deduction *= multiplier;
+        time -= deduction;
         if (time < 10) {
             return 10;
         }
 
-        return time / multiplier;
+        return time;
     }
 
     this.getDoubleHitChance = function() {
