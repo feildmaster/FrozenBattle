@@ -12,6 +12,7 @@ function EndlessBattle() {
     this.lastStatsUpdate = Date.now();
 
     this.damageDealtSinceUpdate = 0;
+    this.experienceSinceUpdate = 0;
 
     this.updateTimePassed = 0;
 
@@ -35,6 +36,7 @@ function EndlessBattle() {
         game.native_save = game.save;
         game.native_load = game.load;
         game.player.native_getCritChance = game.player.getCritChance;
+        game.player.native_gainExperience = game.player.gainExperience;
         game.mercenaryManager.native_purchaseMercenary = game.mercenaryManager.purchaseMercenary;
         game.monsterCreator.native_createRandomMonster = game.monsterCreator.createRandomMonster;
         
@@ -45,6 +47,7 @@ function EndlessBattle() {
         game.save = this.onSave;
         game.load = this.onLoad;
         game.player.getCritChance = this.onGetCritChance;
+        game.player.gainExperience = this.onGainExperience;
         game.mercenaryManager.purchaseMercenary = this.onPurchaseMercenary;
         game.monsterCreator.createRandomMonster = this.onCreateMonster;
 
@@ -69,6 +72,12 @@ function EndlessBattle() {
         FrozenUtils.log("Endless battle module version " + this.getFullVersionString() + " loaded");
     }
     
+    this.onGainExperience = function(amount, includeBonuses) {
+        game.player.native_gainExperience(amount, includeBonuses);
+        
+        FrozenBattle.EndlessBattle.experienceSinceUpdate += amount;
+    }
+        
     this.onCreateMonster = function(level, rarity) {
         if (game.monster) {
             game.monster.takeDamage = game.monster.native_takeDamage;
@@ -571,8 +580,11 @@ function EndlessBattle() {
     }
 
     this.updateStats = function() {
-        this.settings.stats['DPS'] = this.damageDealtSinceUpdate;
+        this.settings.stats['Damage/s'] = this.damageDealtSinceUpdate;
         this.damageDealtSinceUpdate = 0;
+        
+        this.settings.stats['XP/s'] = this.experienceSinceUpdate;
+        this.experienceSinceUpdate = 0;
         
         this.updateInterfaceStats();
     }
