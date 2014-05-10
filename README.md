@@ -28,15 +28,32 @@ Extension Contents
  - Adds a log window showing recently looted items and auto sell values.
  - Adds option to sort the inventory by type and rarity
  - Adds several different types of number formatting
+ - Adds a new stats window with addon related stats
+ - Adds an optional reset mechanic based on the overall levels reset with the addon active
  - Improves the Item sell price to reflect the properties better.
  
 What's new
 -----------
 
+ - 2014-05-10: More auto attack options and reset mechanic
+ - 2014-05-08: Notification window improved
  - 2014-05-07: Health fix, Number formatting and inventory sorting
  - 2014-05-06: Initial version
 
-Upcoming features
-------------------
+Auto attack details
+-------------------
+Auto attack speed starts at 10s and gets faster for every mercenaries owned:
+ - 10ms for footmen
+ - 15ms for clerics
+ - 20ms for mages
+ - 25ms for thieves
+ - 30ms for warlocks
 
- - Provide extra stats.
+Every commander owned increased the overall mercenary bonus by another 10%.
+
+Reset details
+-------------
+The reset bonus accumulates levels on reset.
+For every level reset you currently gain:
+ - 1% bonus damage on the character stat
+ - 1% bonus XP and Gold (does not apply to item sales)
