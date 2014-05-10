@@ -44,12 +44,12 @@ Auto attack details
 -------------------
 Auto attack speed starts at 10s and gets faster for every mercenaries owned:
  - 10ms for footmen
- - 15ms for clerics
- - 20ms for mages
- - 25ms for thieves
- - 30ms for warlocks
+ - 20ms for clerics
+ - 75ms for mages
+ - 150ms for thieves
+ - 250ms for warlocks
 
-Every commander owned increased the overall mercenary bonus by another 10%.
+Every commander owned increased the overall mercenary bonus by another 1%.
 
 Reset details
 -------------
