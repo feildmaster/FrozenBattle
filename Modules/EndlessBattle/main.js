@@ -329,10 +329,10 @@ function EndlessBattle() {
         var time = 10000;
         var deduction = 0;
         deduction += game.mercenaryManager.footmenOwned * 10;
-        deduction += game.mercenaryManager.clericsOwned * 15;
-        deduction += game.mercenaryManager.magesOwned * 20;
-        deduction += game.mercenaryManager.thiefsOwned * 25;
-        deduction += game.mercenaryManager.warlocksOwned * 30;
+        deduction += game.mercenaryManager.clericsOwned * 20;
+        deduction += game.mercenaryManager.magesOwned * 75;
+        deduction += game.mercenaryManager.thiefsOwned * 150;
+        deduction += game.mercenaryManager.warlocksOwned * 250;
         var multiplier = 1.0 + game.mercenaryManager.commandersOwned * 0.01;
         deduction *= multiplier;
         time -= deduction;
