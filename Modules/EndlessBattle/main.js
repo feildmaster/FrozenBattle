@@ -32,6 +32,7 @@ function EndlessBattle() {
         this.settings.load();
 
         this.registerHooks();
+        this.applyLevelResetBonus();
 
         // Override item tooltips
         this.native_equipItemHover = equipItemHover;
@@ -102,26 +103,29 @@ function EndlessBattle() {
 
         game.native_reset();
 
-        // Apply base stat bonus for level resets
-        if (self.settings.applyLevelResetBonus) {
-            game.player.baseDamageBonus += self.settings.levelsReset;
-        }
-
+        self.applyLevelResetBonus();
         self.settings.autoCombatMaxLevelDifference = 0;
         self.settings.autoCombatLevel = 1;
         self.settings.save();
 
         self.registerHooks();
+        
+        if(self.settings.skipTutorial) {
+            $("#expBarArea").show();
+            $(".questsWindowButton").show();
+            $(".inventoryWindowButton").show();
+            $(".characterWindowButton").show();
+            $(".mercenariesWindowButton").show();
+            $(".upgradesWindowButton").show();
+            $("#upgradesWindowButtonGlow").show();
+            
+            game.tutorialManager.currentTutorial = 11;
+            game.tutorialManager.hideTutorial();
+        }
     }
 
     this.onGainExperience = function(amount, includeBonuses) {
         var self = FrozenBattle.EndlessBattle;
-
-        if (self.settings.applyLevelResetBonus) {
-            var multiplier = 1 + 0.01 * self.settings.levelsReset;
-            amount *= multiplier;
-        }
-
         game.player.native_gainExperience(amount, includeBonuses);
 
         self.experienceSinceUpdate += amount;
@@ -129,12 +133,6 @@ function EndlessBattle() {
 
     this.onGainGold = function(amount, includeBonuses) {
         var self = FrozenBattle.EndlessBattle;
-
-        if (self.settings.applyLevelResetBonus) {
-            var multiplier = 1 + 0.01 * self.settings.levelsReset;
-            amount *= multiplier;
-        }
-
         game.player.native_gainGold(amount, includeBonuses);
     }
 
@@ -652,6 +650,14 @@ function EndlessBattle() {
 
         this.updateInterfaceStats();
     }
+    
+    this.applyLevelResetBonus = function() {
+        if (this.settings.applyLevelResetBonus) {
+            game.player.baseDamageBonus += this.settings.levelsReset;
+            game.player.baseGoldGain += this.settings.levelsReset;
+            game.player.baseExperienceGain += this.settings.levelsReset;
+        }
+    }
 
     // ---------------------------------------------------------------------------
     // User interface
@@ -696,6 +702,12 @@ function EndlessBattle() {
                         }));
         $('#fbOptionFormatHealthBars').after(
                 $('<div id="fbOptionApplyLevelResetBonus" class="optionsWindowOption"/>').click(this.onToggleApplyLevelResetBonus));
+        $('#fbOptionApplyLevelResetBonus').after(
+                $('<div id="fbOptionSkipTutorial" class="optionsWindowOption"/>').click(
+                        function() {
+                            FrozenBattle.EndlessBattle
+                                    .onToggleBoolSetting("skipTutorial")
+                        }));
 
         // Auto combat screen
         var ondemandOptions = $('<div id="fbOnDemandOptions" class="navBarWindow" style="width:300px; height:200px; position: absolute; left:10px;top: 75px;margin: 0;"/>');
@@ -829,9 +841,11 @@ function EndlessBattle() {
         self.settings.applyLevelResetBonus = !self.settings.applyLevelResetBonus;
         
         if (self.settings.applyLevelResetBonus) {
-            game.player.baseDamageBonus += self.settings.levelsReset;
+            self.applyLevelResetBonus();
         } else {
             game.player.baseDamageBonus -= self.settings.levelsReset;
+            game.player.baseGoldGain -= self.settings.levelsReset;
+            game.player.baseExperienceGain -= self.settings.levelsReset;
         }
         
         self.updateUI();
@@ -920,7 +934,10 @@ function EndlessBattle() {
                         + this.getBoolDisplayText(this.settings.formatHealthBarNumbers));
         $("#fbOptionApplyLevelResetBonus").text(
                 "Apply level reset bonus: "
-                        + this.getBoolDisplayText(this.settings.applyLevelResetBonus))
+                        + this.getBoolDisplayText(this.settings.applyLevelResetBonus));
+        $("#fbOptionSkipTutorial").text(
+                "Skip Tutorial: "
+                        + this.getBoolDisplayText(this.settings.skipTutorial));
 
         var autoSellThresholdText = "";
         if (this.settings.autoSellActive) {
