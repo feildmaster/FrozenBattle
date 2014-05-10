@@ -15,16 +15,21 @@ FrozenBattle.EndlessBattleSettings = function EndlessBattleSettings()
 	
 	// Auto combat
 	this.autoCombatActive = false;
+	this.autoCombatKeepLevelDifference = true;
 	this.autoCombatLastAttackTime = 0;
 	this.autoCombatMaxLevelDifference = 5;
+	this.autoCombatLevel = 0;
 	
 	// misc
 	this.improvedSalePriceEnabled = true;
+	this.formatHealthBarNumbers = true;
 	this.detailedLogging = true;
 	this.numberFormatter = 1;
 	
 	// Stats and other potentially big data
 	this.log = [];
+	
+	this.stats = {};
 	
 	//---------------------------------------------------------------------------
 	//loading / saving
@@ -48,12 +53,22 @@ FrozenBattle.EndlessBattleSettings = function EndlessBattleSettings()
 		localStorage.fb_autoSellThreshold = this.autoSellThreshold;
 		
 		localStorage.fb_autoCombatActive = this.autoCombatActive;
+		localStorage.fb_autoCombatKeepLevelDifference = this.autoCombatKeepLevelDifference;
 		localStorage.fb_autoCombatLastAttackTime = this.autoCombatLastAttackTime;
 		localStorage.fb_autoCombatMaxLevelDifference = this.autoCombatMaxLevelDifference;
+		localStorage.fb_autoCombatLevel = this.autoCombatLevel;
 		
 		localStorage.fb_improvedSalePriceEnable = this.improvedSalePriceEnabled;
 		localStorage.fb_detailedLogging = this.detailedLogging;
 		localStorage.fb_numberFormatter = this.numberFormatter;
+		localStorage.fb_formatHealthBarNumbers = this.formatHealthBarNumbers;
+		
+		var statKeys = Object.keys(this.stats);
+		localStorage.fb_statCount = statKeys.length;
+		for(var i = 0; i < statKeys.length; i++) {
+		    localStorage['fb_stat_name_'+i] = statKeys[i];
+		    localStorage['fb_stat_value_'+i] = this.stats[statKeys[i]];
+		}
 	}
 	
 	this.load = function()
@@ -75,11 +90,24 @@ FrozenBattle.EndlessBattleSettings = function EndlessBattleSettings()
 		this.autoSellThreshold = FrozenUtils.loadInt("fb_autoSellThreshold", 2);
 		
 		this.autoCombatActive = FrozenUtils.loadBool("fb_autoCombatActive", false);
+		this.autoCombatKeepLevelDifference = FrozenUtils.loadBool("fb_autoCombatKeepLevelDifference", true);
 		this.autoCombatLastAttackTime = FrozenUtils.loadInt("fb_autoCombatLastAttackTime", 0);
 		this.autoCombatMaxLevelDifference = FrozenUtils.loadInt("fb_autoCombatMaxLevelDifference", 5);
+		this.autoCombatLevel = FrozenUtils.loadInt("fb_autoCombatLevel", 0);
 		
 		this.improvedSalePriceEnable = FrozenUtils.loadBool("fb_improvedSalePriceEnable", true);
 		this.detailedLogging = FrozenUtils.loadBool("fb_detailedLogging", true);
 		this.numberFormatter = FrozenUtils.loadInt("fb_numberFormatter", 0);
+		this.formatHealthBarNumbers = FrozenUtils.loadBool("fb_formatHealthBarNumbers", true);
+		
+		var statCount = FrozenUtils.loadInt("fb_statCount", 0);
+		for(var i = 0; i < statCount; i++) {
+		    var name = FrozenUtils.load("fb_stat_name_"+i, undefined);
+		    var value = FrozenUtils.loadFloat("fb_stat_value_"+i, 0);
+		    if(!name) {
+		        continue;
+		    }
+		    this.stats[name] = value;
+		}
 	}
 }

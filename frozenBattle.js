@@ -121,8 +121,8 @@ FrozenUtils.logFormat = function(message) {
 	return time + ' ' + message;
 }
 
-FrozenUtils.log = function(message) {
-	if (this.notyEnabled) {
+FrozenUtils.log = function(message, allowNoty) {
+	if (this.notyEnabled && (allowNoty == undefined || allowNoty)) {
 		noty({
 			text : this.logFormat(message),
 			type : 'alert'
@@ -157,17 +157,17 @@ FrozenUtils.loadScripts = function(scripts, nextId, finish) {
 	var script = scripts[nextId];
 	var loaded = jQuery.inArray(script, this.loadedScripts);
 	if (loaded >= 0) {
-		this.log("Script is already loaded: " + nextId);
+		this.log("Script is already loaded: " + nextId, false);
 		FrozenUtils.loadScripts(scripts, nextId + 1, finish);
 		return;
 	}
 
-	this.log("Loading " + script);
+	this.log("Loading " + script, false);
 	this.loadedScripts.push(script);
 	try {
 		if (/\.js$/.exec(script)) {
 			$.getScript(script).done(function(script, textStatus) {
-				FrozenUtils.log("  -> DONE");
+				FrozenUtils.log("  -> DONE", false);
 				FrozenUtils.loadScripts(scripts, nextId + 1, finish);
 			}).fail(
 					function(jqxhr, settings, exception) {
@@ -181,13 +181,13 @@ FrozenUtils.loadScripts = function(scripts, nextId, finish) {
 				type : 'text/css',
 				href : script
 			}).appendTo($('head'));
-			FrozenUtils.log("  -> DONE");
+			FrozenUtils.log("  -> DONE", false);
 			FrozenUtils.loadScripts(scripts, nextId + 1, finish);
 		} else {
 			this.logError("Unhandled script type!")
 		}
 	} catch (e) {
-		this.logError(e);
+		this.logError(e +": "+ FrozenUtils.stackTrace());
 	}
 }
 

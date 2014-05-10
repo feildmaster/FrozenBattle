@@ -101,7 +101,7 @@ FrozenCore.main = function()
 	
 	FrozenUtils.notyEnabled = true;
 		
-	FrozenUtils.log("Initializing core...");
+	FrozenUtils.log("Initializing core...", false);
 	
 	var moduleScripts = [];
 	for(var i = 0; i < CoreData.modules.length; i++)
