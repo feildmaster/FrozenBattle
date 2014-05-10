@@ -334,6 +334,10 @@ function EndlessBattle() {
         deduction += game.mercenaryManager.thiefsOwned * 150;
         deduction += game.mercenaryManager.warlocksOwned * 250;
         var multiplier = 1.0 + game.mercenaryManager.commandersOwned * 0.01;
+        if(this.settings.applyLevelResetBonus) {
+            multiplier += this.settings.levelsReset * 0.01;
+        }
+        
         deduction *= multiplier;
         time -= deduction;
         if (time < 10) {

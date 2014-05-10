@@ -57,3 +57,4 @@ The reset bonus accumulates levels on reset.
 For every level reset you currently gain:
  - 1% bonus damage on the character stat
  - 1% bonus XP and Gold (does not apply to item sales)
+ - 1% to the auto attack speed bonus for mercenaries
