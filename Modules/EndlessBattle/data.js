@@ -20,6 +20,11 @@ FrozenBattle.EndlessBattleSettings = function EndlessBattleSettings()
 	this.autoCombatMaxLevelDifference = 5;
 	this.autoCombatLevel = 1;
 	
+	// Stats bought
+	this.statIncreaseStrength = 0;
+	this.statIncreaseStamina = 0;
+	this.statIncreaseAgi = 0;
+	
 	// misc
 	this.improvedSalePriceEnabled = true;
 	this.formatHealthBarNumbers = true;
@@ -28,6 +33,7 @@ FrozenBattle.EndlessBattleSettings = function EndlessBattleSettings()
 	this.levelsReset = 0;
 	this.applyLevelResetBonus = true;
 	this.skipTutorial = true;
+	this.statsBought = 0;
 	
 	// Stats and other potentially big data
 	this.log = [];
@@ -61,6 +67,10 @@ FrozenBattle.EndlessBattleSettings = function EndlessBattleSettings()
 		localStorage.fb_autoCombatMaxLevelDifference = this.autoCombatMaxLevelDifference;
 		localStorage.fb_autoCombatLevel = this.autoCombatLevel;
 		
+		localStorage.fb_statIncreaseStrength = this.statIncreaseStrength;
+		localStorage.fb_statIncreaseStamina = this.statIncreaseStamina;
+		localStorage.fb_statIncreaseAgi = this.statIncreaseAgi;
+		
 		localStorage.fb_improvedSalePriceEnable = this.improvedSalePriceEnabled;
 		localStorage.fb_detailedLogging = this.detailedLogging;
 		localStorage.fb_numberFormatter = this.numberFormatter;
@@ -68,6 +78,7 @@ FrozenBattle.EndlessBattleSettings = function EndlessBattleSettings()
 		localStorage.fb_levelsReset = this.levelsReset;
 		localStorage.fb_applyLevelResetBonus = this.applyLevelResetBonus;
 		localStorage.fb_skipTutorial = this.skipTutorial;
+		localStorage.fb_statsBought = this.statsBought;
 		
 		var statKeys = Object.keys(this.stats);
 		localStorage.fb_statCount = statKeys.length;
@@ -101,6 +112,10 @@ FrozenBattle.EndlessBattleSettings = function EndlessBattleSettings()
 		this.autoCombatMaxLevelDifference = FrozenUtils.loadInt("fb_autoCombatMaxLevelDifference", 5);
 		this.autoCombatLevel = FrozenUtils.loadInt("fb_autoCombatLevel", 1);
 		
+		this.statIncreaseStrength = FrozenUtils.loadInt("fb_statIncreaseStrength", 0);
+		this.statIncreaseStamina = FrozenUtils.loadInt("fb_statIncreaseStamina", 0);
+		this.statIncreaseAgi = FrozenUtils.loadInt("fb_statIncreaseAgi", 0);
+		
 		this.improvedSalePriceEnable = FrozenUtils.loadBool("fb_improvedSalePriceEnable", true);
 		this.detailedLogging = FrozenUtils.loadBool("fb_detailedLogging", true);
 		this.numberFormatter = FrozenUtils.loadInt("fb_numberFormatter", 0);
@@ -108,6 +123,7 @@ FrozenBattle.EndlessBattleSettings = function EndlessBattleSettings()
 		this.levelsReset = FrozenUtils.loadInt("fb_levelsReset", 0);
 		this.applyLevelResetBonus = FrozenUtils.loadBool("fb_applyLevelResetBonus", true);
 		this.skipTutorial = FrozenUtils.loadBool("fb_skipTutorial", true);
+		this.statsBought = FrozenUtils.loadInt("fb_statsBought", 0);
 		
 		var statCount = FrozenUtils.loadInt("fb_statCount", 0);
 		for(var i = 0; i < statCount; i++) {

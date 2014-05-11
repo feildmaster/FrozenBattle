@@ -1,7 +1,7 @@
 function EndlessBattle() {
     this.moduleActive = true;
     this.name = "EndlessBattle";
-    this.version = 1.5;
+    this.version = 1.6;
     this.baseUrl = FrozenBattle.baseUrl + '/Modules/EndlessBattle';
     this.scripts = [ FrozenBattle.baseUrl + '/data.js', FrozenBattle.baseUrl + '/core.js' ];
 
@@ -33,6 +33,9 @@ function EndlessBattle() {
 
         this.registerHooks();
         this.applyLevelResetBonus();
+        
+        // Apply bought stats
+        this.applyStatIncrease();
 
         // Override item tooltips
         this.native_equipItemHover = equipItemHover;
@@ -106,6 +109,10 @@ function EndlessBattle() {
         self.applyLevelResetBonus();
         self.settings.autoCombatMaxLevelDifference = 0;
         self.settings.autoCombatLevel = 1;
+        self.settings.statIncreaseAgi = 0;
+        self.settings.statIncreaseStamina = 0;
+        self.settings.statIncreaseStrength = 0;
+        self.settings.statsBought = 0;
         self.settings.save();
 
         self.registerHooks();
@@ -122,6 +129,8 @@ function EndlessBattle() {
             game.tutorialManager.currentTutorial = 11;
             game.tutorialManager.hideTutorial();
         }
+        
+        self.updateUI();
     }
 
     this.onGainExperience = function(amount, includeBonuses) {
@@ -411,7 +420,7 @@ function EndlessBattle() {
         }
 
         if (this.settings.detailedLogging) {
-            FrozenUtils.log("Found " + item.name);
+            FrozenUtils.log("Found "+item.rarity+" " + item.name);
         }
 
         return item;
@@ -653,6 +662,9 @@ function EndlessBattle() {
 
         // Set some special stats directly
         this.settings.stats["Levels reset"] = this.settings.levelsReset;
+        this.settings.stats["Str bought"] = this.settings.statIncreaseStrength;
+        this.settings.stats["Sta bought"] = this.settings.statIncreaseStamina;
+        this.settings.stats["Agi bought"] = this.settings.statIncreaseAgi;
 
         this.updateInterfaceStats();
     }
@@ -663,6 +675,101 @@ function EndlessBattle() {
             game.player.baseGoldGain += this.settings.levelsReset;
             game.player.baseExperienceGain += this.settings.levelsReset;
         }
+    }
+    
+    this.applyStatIncrease = function() {
+        game.player.baseStrength += this.settings.statIncreaseStrength;
+        game.player.baseStamina += this.settings.statIncreaseStamina;
+        game.player.baseAgility += this.settings.statIncreaseAgi;
+    }
+    
+    this.removeStatIncrease = function() {
+        game.player.baseStrength -= this.settings.statIncreaseStrength;
+        game.player.baseStamina -= this.settings.statIncreaseStamina;
+        game.player.baseAgility -= this.settings.statIncreaseAgi;
+    }
+    
+    this.gamble = function() {
+        var cost = this.getGambleCost();
+        if(game.player.gold < cost) {
+            FrozenUtils.logError("Not enough gold!");
+            return false;
+        }
+        
+        var targetLevel = game.player.level;
+        var depth = 2 + Math.random() * 10;
+        var modifier = Math.random();
+        var gambleResult = "average";
+        if(modifier < 0.2) {
+            targetLevel -= 2;
+            gambleResult = "mediocre";
+            depth -= 5;
+        }
+        if(modifier > 0.8) {
+            targetLevel++;
+            gambleResult = "good";
+            depth += 10;
+        }
+        if(modifier > 0.9) {
+            targetLevel += 2;
+            gambleResult = "great";
+            depth += 10;
+        }
+                
+        var rarity = game.monsterCreator.calculateMonsterRarity(targetLevel, Math.floor(depth))
+        var item = undefined;
+        while(item == undefined) {
+            item = game.itemCreator.createRandomItem(targetLevel, rarity);
+        }
+        
+        game.inventory.lootItem(item);
+        game.player.gold -= cost;
+        this.addStat('Gambled');
+        this.addStat('Gamble cost', cost);
+        FrozenUtils.log("Gambled an "+gambleResult+" reward!");
+        this.refreshInventoryDisplay();
+        return true;
+    }
+    
+    this.increaseStat = function(key) {
+        var cost = this.getStatIncreaseCost();
+        if(game.player.gold < cost) {
+            FrozenUtils.logError("Not enough gold!");
+            return false;
+        }
+        
+        this.removeStatIncrease();
+        this.settings[key]++;
+        this.settings.statsBought++;
+        this.applyStatIncrease();
+        
+        game.player.gold -= cost;
+        
+        this.addStat('Stat cost', cost);
+        
+        return true;
+    }
+    
+    this.getGps = function() {
+        var gps = 0;
+
+        for (var x = 0; x < game.mercenaryManager.mercenaries.length; x++) {
+            gps += game.mercenaryManager.getMercenariesGps(game.mercenaryManager.mercenaries[x].type);
+        }
+        
+        return gps;
+    }
+    
+    this.getGambleCost = function() {
+        var cost = this.getGps() * 120;
+        if(cost < 1000) cost = 1000;
+        return cost;
+    }
+    
+    this.getStatIncreaseCost = function() {
+        var cost = ((game.player.level + this.getGps()) + this.settings.statsBought) * (1 + this.settings.statsBought);
+        if(cost < 100) cost = 100;
+        return cost;
     }
 
     // ---------------------------------------------------------------------------
@@ -716,7 +823,7 @@ function EndlessBattle() {
                         }));
 
         // Auto combat screen
-        var ondemandOptions = $('<div id="fbOnDemandOptions" class="navBarWindow" style="width:300px; height:200px; position: absolute; left:10px;top: 75px;margin: 0;"/>');
+        var ondemandOptions = $('<div id="fbOnDemandOptions" class="navBarWindow" style="width:300px; height:320px; position: absolute; left:10px;top: 75px;margin: 0;"/>');
         $(document.body).append(ondemandOptions);
         ondemandOptions
                 .append("<div class=\"navBarText\" style=\"padding: 5px 10px 5px 10px\">Frozen Battle Options</div");
@@ -784,14 +891,36 @@ function EndlessBattle() {
                 .addClass('button').click(function() {
                     FrozenBattle.EndlessBattle.onToggleBoolSetting("autoSellActive")
                 }));
-
+        
         ondemandOptions
                 .append($(
                         '<div id="autoSellThresholdButton" class="navBarText" style="padding: 2px 10px 2px 20px"/>')
                         .addClass('button').click(this.onToggleAutoSellThreshold));
+        
+        ondemandOptions.append($(
+        '<div id="gambleButton" class="navBarText" style="padding: 2px 10px 2px 10px"/>')
+        .addClass('button').click(this.onGamble));
+        
+        ondemandOptions.append($(
+        '<div id="statIncreaseStr" class="navBarText" style="padding: 2px 10px 2px 10px"/>')
+        .addClass('button').click(function() {
+            FrozenBattle.EndlessBattle.onIncreaseStat('statIncreaseStrength');
+        }));
+        
+        ondemandOptions.append($(
+        '<div id="statIncreaseSta" class="navBarText" style="padding: 2px 10px 2px 10px"/>')
+        .addClass('button').click(function() {
+            FrozenBattle.EndlessBattle.onIncreaseStat('statIncreaseStamina');
+        }));
+        
+        ondemandOptions.append($(
+        '<div id="statIncreaseAgi" class="navBarText" style="padding: 2px 10px 2px 10px"/>')
+        .addClass('button').click(function() {
+            FrozenBattle.EndlessBattle.onIncreaseStat('statIncreaseAgi');
+        }));
 
         // Extra Stats screen
-        var extraStats = $('<div id="fbExtraStatsWindow" class="navBarWindow" style="width:300px; height:500px; position: absolute; left:10px;top: 300px;margin: 0;"/>');
+        var extraStats = $('<div id="fbExtraStatsWindow" class="navBarWindow" style="width:300px; height:500px; position: absolute; left:10px;top: 400px;margin: 0;"/>');
         $(document.body).append(extraStats);
         extraStats
                 .append('<div class="navBarText" style="padding: 5px 120px 5px 10px; float: left">Frozen Battle Stats</div>');
@@ -842,6 +971,13 @@ function EndlessBattle() {
         self.updateUI();
     }
     
+    this.onIncreaseStat = function(key) {
+        var self = FrozenBattle.EndlessBattle;
+        if(self.increaseStat(key)) {
+            self.updateUI();
+        }
+    }
+    
     this.onToggleApplyLevelResetBonus = function() {
         var self = FrozenBattle.EndlessBattle;
         self.settings.applyLevelResetBonus = !self.settings.applyLevelResetBonus;
@@ -883,6 +1019,10 @@ function EndlessBattle() {
 
     this.onSortInventory = function() {
         FrozenBattle.EndlessBattle.sortInventory();
+    }
+    
+    this.onGamble = function() {
+        FrozenBattle.EndlessBattle.gamble();
     }
 
     this.updateMercenarySalePrices = function() {
@@ -944,6 +1084,13 @@ function EndlessBattle() {
         $("#fbOptionSkipTutorial").text(
                 "Skip Tutorial: "
                         + this.getBoolDisplayText(this.settings.skipTutorial));
+        
+        $("#gambleButton").text("Gamble for "+ this.getGambleCost().formatMoney(2));
+        
+        var statCost = this.getStatIncreaseCost();
+        $("#statIncreaseStr").text("Buy str for "+statCost.formatMoney(2));
+        $("#statIncreaseSta").text("Buy sta for "+statCost.formatMoney(2));
+        $("#statIncreaseAgi").text("Buy agi for "+statCost.formatMoney(2));
 
         var autoSellThresholdText = "";
         if (this.settings.autoSellActive) {
