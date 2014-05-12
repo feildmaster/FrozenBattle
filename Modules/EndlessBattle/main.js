@@ -1,7 +1,7 @@
 function EndlessBattle() {
     this.moduleActive = true;
     this.name = "EndlessBattle";
-    this.version = 1.6;
+    this.version = 1.7;
     this.baseUrl = FrozenBattle.baseUrl + '/Modules/EndlessBattle';
     this.scripts = [ FrozenBattle.baseUrl + '/data.js', FrozenBattle.baseUrl + '/core.js' ];
 
@@ -36,16 +36,6 @@ function EndlessBattle() {
         
         // Apply bought stats
         this.applyStatIncrease();
-
-        // Override item tooltips
-        this.native_equipItemHover = equipItemHover;
-        this.native_inventoryItemHover = inventoryItemHover;
-        equipItemHover = this.onEquipItemHover;
-        inventoryItemHover = this.onInventoryItemHover;
-
-        // Override the formatter
-        this.native_formatMoney = Number.prototype.formatMoney;
-        Number.prototype.formatMoney = this.onFormatMoney;
 
         // Store some other variables from the core game
         this.minRarity = ItemRarity.COMMON;
@@ -82,6 +72,17 @@ function EndlessBattle() {
         game.player.gainGold = this.onGainGold;
         game.mercenaryManager.purchaseMercenary = this.onPurchaseMercenary;
         game.monsterCreator.createRandomMonster = this.onCreateMonster;
+        
+        // Override item tooltips
+        this.native_equipItemHover = equipItemHover;
+        this.native_inventoryItemHover = inventoryItemHover;
+        equipItemHover = this.onEquipItemHover;
+        inventoryItemHover = this.onInventoryItemHover;
+        
+        // Override the formatter
+        this.native_formatMoney = Number.prototype.formatMoney;
+        Number.prototype.formatMoney = this.onFormatNumber;
+        Number.prototype.formatNumber = this.onFormatNumber;
     }
 
     this.releaseHooks = function() {
@@ -95,6 +96,10 @@ function EndlessBattle() {
         game.player.gainGold = game.player.native_gainGold;
         game.mercenaryManager.purchaseMercenary = game.mercenaryManager.native_purchaseMercenary;
         game.monsterCreator.createRandomMonster = game.monsterCreator.native_createRandomMonster;
+        
+        Number.prototype.formatMoney = this.native_formatMoney;
+        equipItemHover = this.native_equipItemHover;
+        inventoryItemHover = this.native_inventoryItemHover;
     }
 
     this.onReset = function() {
@@ -189,16 +194,15 @@ function EndlessBattle() {
     this.onLoad = function() {
         FrozenBattle.EndlessBattle.load();
     }
-
-    this.onFormatMoney = function(c, d, t) {
+    
+    this.onFormatNumber = function(d) {
         var self = FrozenBattle.EndlessBattle;
         var formatterKey = FrozenCore.FormatterKeys[self.settings.numberFormatter];
         if (FrozenCore.Formatters[formatterKey] != undefined) {
             var formatter = FrozenCore.Formatters[formatterKey];
             return formatter(parseInt(this)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        }
-        else {
-            return self.nativeFormatMoney(this, c, d, t);
+        } else {
+            return self.nativeFormatMoney(this, d || 0);
         }
     }
 
@@ -211,7 +215,7 @@ function EndlessBattle() {
             return;
         }
 
-        $("#itemTooltipSellValue").html(item.sellValue.formatMoney());
+        $("#itemTooltipSellValue").html(item.sellValue.formatNumber());
     }
 
     this.onInventoryItemHover = function(obj, index) {
@@ -223,11 +227,11 @@ function EndlessBattle() {
             return;
         }
 
-        $("#itemTooltipSellValue").html(item.sellValue.formatMoney(2));
+        $("#itemTooltipSellValue").html(item.sellValue.formatNumber());
         var equippedSlot = self.getItemSlotNumber(item.type);
         var item2 = game.equipment.slots[equippedSlot];
         if (item2) {
-            $("#itemCompareTooltipSellValue").html(item2.sellValue.formatMoney(2));
+            $("#itemCompareTooltipSellValue").html(item2.sellValue.formatNumber());
         }
     }
 
@@ -383,7 +387,7 @@ function EndlessBattle() {
 
                 if (this.settings.detailedLogging) {
                     FrozenUtils.log("sold " + this.getRarityString(rarity) + " " + item.name
-                            + " for " + item.sellValue.formatMoney(2));
+                            + " for " + item.sellValue.formatNumber());
                 }
 
                 this.addStat("Items sold");
@@ -761,14 +765,12 @@ function EndlessBattle() {
     }
     
     this.getGambleCost = function() {
-        var cost = this.getGps() * 120;
-        if(cost < 1000) cost = 1000;
+        var cost = Math.pow(1.3, game.player.level) * 340;
         return cost;
     }
     
     this.getStatIncreaseCost = function() {
-        var cost = ((game.player.level + this.getGps()) + this.settings.statsBought) * (1 + this.settings.statsBought);
-        if(cost < 100) cost = 100;
+        var cost = Math.pow(1.15, this.settings.statsBought) * 240;
         return cost;
     }
 
@@ -1026,12 +1028,12 @@ function EndlessBattle() {
     }
 
     this.updateMercenarySalePrices = function() {
-        $("#footmanCost").text(game.mercenaryManager.footmanPrice.formatMoney(0));
-        $("#clericCost").text(game.mercenaryManager.clericPrice.formatMoney(0));
-        $("#commanderCost").text(game.mercenaryManager.commanderPrice.formatMoney(0));
-        $("#mageCost").text(game.mercenaryManager.magePrice.formatMoney(0));
-        $("#thiefCost").text(game.mercenaryManager.thiefPrice.formatMoney(0));
-        $("#warlockCost").text(game.mercenaryManager.warlockPrice.formatMoney(0));
+        $("#footmanCost").text(game.mercenaryManager.footmanPrice.formatNumber());
+        $("#clericCost").text(game.mercenaryManager.clericPrice.formatNumber());
+        $("#commanderCost").text(game.mercenaryManager.commanderPrice.formatNumber());
+        $("#mageCost").text(game.mercenaryManager.magePrice.formatNumber());
+        $("#thiefCost").text(game.mercenaryManager.thiefPrice.formatNumber());
+        $("#warlockCost").text(game.mercenaryManager.warlockPrice.formatNumber());
     }
 
     this.updateUI = function() {
@@ -1085,12 +1087,12 @@ function EndlessBattle() {
                 "Skip Tutorial: "
                         + this.getBoolDisplayText(this.settings.skipTutorial));
         
-        $("#gambleButton").text("Gamble for "+ this.getGambleCost().formatMoney(2));
+        $("#gambleButton").text("Gamble for "+ this.getGambleCost().formatNumber());
         
         var statCost = this.getStatIncreaseCost();
-        $("#statIncreaseStr").text("Buy str for "+statCost.formatMoney(2));
-        $("#statIncreaseSta").text("Buy sta for "+statCost.formatMoney(2));
-        $("#statIncreaseAgi").text("Buy agi for "+statCost.formatMoney(2));
+        $("#statIncreaseStr").text("Buy str for "+statCost.formatNumber());
+        $("#statIncreaseSta").text("Buy sta for "+statCost.formatNumber());
+        $("#statIncreaseAgi").text("Buy agi for "+statCost.formatNumber());
 
         var autoSellThresholdText = "";
         if (this.settings.autoSellActive) {
@@ -1114,25 +1116,25 @@ function EndlessBattle() {
         $("#fbExtraStats").empty();
         for (key in this.settings.stats) {
             $("#fbExtraStats").append(
-                    '<div class="navBarText" style="padding: 5px 100px 5px 10px; float:left;width:100px">'
+                    '<div class="navBarText" style="padding: 5px 70px 5px 10px; float:left;width:100px">'
                             + key + '</div>');
             $("#fbExtraStats").append(
                     '<div class="navBarText" style="padding: 5px 10px 5px 10px">'
-                            + this.settings.stats[key].formatMoney(2) + '</div>');
+                            + this.settings.stats[key].formatNumber() + '</div>');
         }
     }
 
     this.updateInterfaceOverrides = function(value) {
         if (this.settings.formatHealthBarNumbers) {
             // Set player HP with formatting
-            var playerHp = Math.floor(game.player.health).formatMoney(2);
-            var playerMaxHp = Math.floor(game.player.getMaxHealth()).formatMoney(2);
+            var playerHp = Math.floor(game.player.health).formatNumber();
+            var playerMaxHp = Math.floor(game.player.getMaxHealth()).formatNumber();
             $("#playerHealthBarText").text(playerHp + '/' + playerMaxHp);
 
             // Set monster HP with formatting
             if (game.displayMonsterHealth && game.monster) {
-                var monsterHp = Math.floor(game.monster.health).formatMoney(2);
-                var monsterMaxHp = Math.floor(game.monster.maxHealth).formatMoney(2);
+                var monsterHp = Math.floor(game.monster.health).formatNumber();
+                var monsterMaxHp = Math.floor(game.monster.maxHealth).formatNumber();
                 $("#monsterName").text(monsterHp + '/' + monsterMaxHp);
             }
         }
