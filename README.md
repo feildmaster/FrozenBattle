@@ -30,11 +30,14 @@ Extension Contents
  - Adds several different types of number formatting
  - Adds a new stats window with addon related stats
  - Adds an optional reset mechanic based on the overall levels reset with the addon active
+ - Adds an item gambler with a rare chance to drop items with a higher level then the player
+ - Adds buying stat points for money, these do not carry over when resetting
  - Improves the Item sell price to reflect the properties better.
  
 What's new
 -----------
 
+ - 2014-05-11: Gambling for items, buying stat points for money and more custom stats
  - 2014-05-10: More auto attack options and reset mechanic
  - 2014-05-08: Notification window improved
  - 2014-05-07: Health fix, Number formatting and inventory sorting
