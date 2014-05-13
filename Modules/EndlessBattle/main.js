@@ -301,13 +301,13 @@ function EndlessBattle() {
             return;
         }
 
-        this.lastAttackTime = time;
-
         // If we don't have enough health don't auto attack
         var healthThreshold = game.player.getMaxHealth() / 2;
         if (game.player.health < healthThreshold) {
             return;
         }
+
+        this.lastAttackTime = time;
 
         // Ensure that we fight on the minimum level
         var targetLevel = game.player.level;
